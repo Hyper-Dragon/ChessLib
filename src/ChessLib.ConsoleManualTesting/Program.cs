@@ -18,8 +18,30 @@ namespace ChessLib.ConsoleManualTesting
         {
             var parsePgn = new PGNParser();
             //parsePgn.ProgressUpdate += OnProgressUpdated;
+
+
+            parsePgn.UpdateProgress += (object sender, ParsingUpdateEventArgs e) =>
+            {
+                Console.WriteLine(e.NumberComplete);
+            };
+
+            parsePgn.UpdateOnError += (object sender, ParsingErrorEventArgs e) =>
+            {
+                Console.WriteLine(e.ErrorMessage);
+            };
+
+
+
+
             var sw = new Stopwatch();
-            var pgnDb = Encoding.UTF8.GetString(PGNResources.talLarge);
+
+
+
+            //var pgnDb = Encoding.UTF8.GetString(PGNResources.talLarge);
+            string pgnDb = File.ReadAllText(@"C:\Dropbox\ChessStats\Preparsed.pgn");
+
+
+
             sw.Start();
             var games = parsePgn.GetGamesFromPGNAsync(pgnDb).Result;
             sw.Stop();

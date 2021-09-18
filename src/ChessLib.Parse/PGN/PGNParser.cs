@@ -29,6 +29,7 @@ namespace ChessLib.Parse.PGN
         protected char TokenTagBegin = '[';
 
         public EventHandler<ParsingUpdateEventArgs> UpdateProgress;
+        public EventHandler<ParsingErrorEventArgs> UpdateOnError;
 
         public PGNParser() : this(new PGNParserOptions())
         {
@@ -84,12 +85,19 @@ namespace ChessLib.Parse.PGN
             var parseTasks = strGames.Take(take)
                 .Select((g, idx) => Task.Factory.StartNew(() =>
                 {
-                    var lexer = new PgnLexer();
-                    var game = lexer.ParseGame(g, ParserOptions);
-                    if (game != null)
+                    try
                     {
-                        game.Reset();
-                        rv[idx] = game;
+                        var lexer = new PgnLexer();
+                        var game = lexer.ParseGame(g, ParserOptions);
+                        if (game != null)
+                        {
+                            game.Reset();
+                            rv[idx] = game;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        SendError(ex.Message);
                     }
 
                     Completed++;
@@ -154,6 +162,13 @@ namespace ChessLib.Parse.PGN
             var args = new ParsingUpdateEventArgs(Stopwatch.Elapsed)
                 {Maximum = GameCount, NumberComplete = Completed};
             UpdateProgress?.Invoke(this, args);
+        }
+
+        private void SendError(string message)
+        {
+            var args = new ParsingErrorEventArgs()
+            { ErrorMessage = message };
+            UpdateOnError?.Invoke(this, args);
         }
 
         private void SendUpdate(string message)
